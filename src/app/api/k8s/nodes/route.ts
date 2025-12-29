@@ -18,7 +18,15 @@ export async function GET() {
       cpu: { capacity: '32', allocatable: '31', usage: '0m' },
       memory: { capacity: '128Gi', allocatable: '120Gi', usage: '0Mi' },
       gpus: {
-        'nvidia.com/mig-3g.20gb': { capacity: '2', allocatable: '1', usage: '0' },
+        'nvidia.com/mig-3g.20gb': { capacity: '2', allocatable: '2', usage: '0' },
+      },
+    },
+    {
+      name: 'non-mig-gpu-node', // New node for non-MIG GPU
+      cpu: { capacity: '16', allocatable: '15', usage: '0m' },
+      memory: { capacity: '64Gi', allocatable: '60Gi', usage: '0Mi' },
+      gpus: {
+        'nvidia.com/gpu': { capacity: '4', allocatable: '4', usage: '0' }, // 4 non-MIG GPUs
       },
     },
     {
