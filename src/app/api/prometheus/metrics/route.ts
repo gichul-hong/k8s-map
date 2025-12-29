@@ -1,30 +1,117 @@
 import { NextResponse } from 'next/server';
 
+// const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://localhost:9090'; // Comment out for dummy data
+
 export async function GET() {
-  // Placeholder for fetching Prometheus metrics
-  // This would typically involve PromQL queries to a Prometheus instance
-  const metrics = [
+  // --- Start of Dummy Data Section ---
+  const dummyMetrics = [
     {
-      node: 'k8s-node-1',
-      cpuUsagePercentage: 37.5, // (1500m / 4000m) * 100
-      memoryUsagePercentage: 50, // (8Gi / 16Gi) * 100
-      gpuUsagePercentage: 0,
-      gpuMigUsagePercentage: 0,
+      node: 'mig-node-1',
+      cpuUsagePercentage: 45.5,
+      memoryUsagePercentage: 60.1,
+      gpuUsagePercentage: 77.5, // (90 + 65) / 2
+      gpus: {
+        'nvidia.com/mig-1g.5gb': { usagePercentage: 90 },
+        'nvidia.com/mig-2g.10gb': { usagePercentage: 65 },
+      },
     },
     {
-      node: 'k8s-node-2',
-      cpuUsagePercentage: 76.9, // (6000m / 7800m) * 100
-      memoryUsagePercentage: 64.5, // (20Gi / 31Gi) * 100
-      gpuUsagePercentage: 0,
-      gpuMigUsagePercentage: 0,
+      node: 'mig-node-2',
+      cpuUsagePercentage: 80.2,
+      memoryUsagePercentage: 75.8,
+      gpuUsagePercentage: 95.0,
+      gpus: {
+        'nvidia.com/mig-3g.20gb': { usagePercentage: 95 },
+      },
     },
     {
-      node: 'k8s-node-3',
-      cpuUsagePercentage: 20.5, // (800m / 3900m) * 100
-      memoryUsagePercentage: 26.6, // (4Gi / 15Gi) * 100
+      node: 'no-gpu-node',
+      cpuUsagePercentage: 15.0,
+      memoryUsagePercentage: 30.5,
       gpuUsagePercentage: 0,
-      gpuMigUsagePercentage: 0,
+      gpus: {},
     },
   ];
-  return NextResponse.json(metrics);
+  return NextResponse.json(dummyMetrics);
+  // --- End of Dummy Data Section ---
+
+  /*
+  // Original Live Data Logic
+  async function queryPrometheus(query: string): Promise<any[]> {
+    try {
+      const response = await fetch(`${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        console.warn(`Prometheus query failed with status ${response.status}: ${query}`);
+        return [];
+      }
+      const data = await response.json();
+      if (data.status !== 'success') {
+        console.warn(`Prometheus query was not successful for: ${query}`);
+        return [];
+      }
+      return data.data.result;
+    } catch (error) {
+      console.error(`Error during Prometheus query for: ${query}`, error);
+      return [];
+    }
+  }
+
+  try {
+    const cpuQuery = '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)';
+    const memoryQuery = '(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100';
+    const gpuQuery = 'avg by (instance, mig_profile) (dcgm_gpu_utilization)'; 
+
+    const [cpuMetrics, memoryMetrics, gpuMetrics] = await Promise.all([
+      queryPrometheus(cpuQuery),
+      queryPrometheus(memoryQuery),
+      queryPrometheus(gpuQuery),
+    ]);
+
+    const metricsMap = new Map<string, any>();
+    const getNodeName = (metric: any) => metric.metric.instance.split(':')[0];
+
+    cpuMetrics.forEach(metric => {
+      const nodeName = getNodeName(metric);
+      if (!metricsMap.has(nodeName)) metricsMap.set(nodeName, { node: nodeName, gpus: {} });
+      metricsMap.get(nodeName).cpuUsagePercentage = parseFloat(metric.value[1]);
+    });
+
+    memoryMetrics.forEach(metric => {
+      const nodeName = getNodeName(metric);
+      if (!metricsMap.has(nodeName)) metricsMap.set(nodeName, { node: nodeName, gpus: {} });
+      metricsMap.get(nodeName).memoryUsagePercentage = parseFloat(metric.value[1]);
+    });
+
+    gpuMetrics.forEach(metric => {
+      const nodeName = getNodeName(metric);
+      const migProfile = metric.metric.mig_profile;
+      if (!migProfile) return;
+
+      if (!metricsMap.has(nodeName)) metricsMap.set(nodeName, { node: nodeName, gpus: {} });
+      
+      const nodeMetrics = metricsMap.get(nodeName);
+      if (!nodeMetrics.gpus[migProfile]) {
+        nodeMetrics.gpus[migProfile] = {};
+      }
+      nodeMetrics.gpus[migProfile].usagePercentage = parseFloat(metric.value[1]);
+    });
+
+    metricsMap.forEach(nodeMetrics => {
+        let totalGpuUsage = 0;
+        let gpuCount = 0;
+        for (const profile in nodeMetrics.gpus) {
+            totalGpuUsage += nodeMetrics.gpus[profile].usagePercentage || 0;
+            gpuCount++;
+        }
+        nodeMetrics.gpuUsagePercentage = gpuCount > 0 ? totalGpuUsage / gpuCount : 0;
+    });
+
+    const metrics = Array.from(metricsMap.values());
+
+    return NextResponse.json(metrics);
+  } catch (error: any) {
+    console.error('Error fetching Prometheus metrics:', error);
+    return NextResponse.json({ error: 'Failed to fetch Prometheus metrics', details: error.message }, { status: 500 });
+  }
+  */
 }
