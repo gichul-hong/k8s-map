@@ -20,6 +20,46 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+---
+
+## k8s-map
+
+### Testing with Dummy Data
+
+The API routes are currently configured to provide mock data for testing without a live Kubernetes or Prometheus connection. Simply run `npm run dev` to see the application with this dummy data.
+
+### Switching to Live Data
+
+When you are ready to connect to your live Kubernetes and Prometheus instances, follow these steps:
+
+1.  **Configure Kubernetes Access:** Ensure your `kubeconfig` file is correctly set up in `~/.kube/config` or another default location.
+
+2.  **Configure Prometheus URL:** Create a `.env.local` file in the project root with the following content, replacing the URL with your Prometheus instance's URL:
+    ```
+    PROMETHEUS_URL=http://your-prometheus-instance:9090
+    ```
+
+3.  **Update API Routes:** Modify the following files to switch from dummy data to live data fetching logic.
+
+    -   **In `src/app/api/k8s/nodes/route.ts`**:
+        -   Comment out or remove the "Dummy Data Section".
+        -   Uncomment the "Original Live Data Logic" section at the bottom.
+        -   Uncomment the `import * as k8s from '@kubernetes/client-node';` line.
+
+    -   **In `src/app/api/prometheus/metrics/route.ts`**:
+        -   Comment out or remove the "Dummy Data Section".
+        -   Uncomment the "Original Live Data Logic" section at the bottom.
+        -   Uncomment the `const PROMETHEUS_URL = ...` line.
+
+### Prometheus Metric Assumptions (for MIG)
+
+The live data logic for Prometheus assumes that your metrics for MIG devices follow this pattern:
+-   **Metric Name:** `dcgm_gpu_utilization` (or similar)
+-   **Labels:** The metric must have a label to distinguish between MIG profiles. The code currently assumes a label named `mig_profile`.
+
+If your setup uses different metric names or labels, you will need to adjust the `gpuQuery` in `src/app/api/prometheus/metrics/route.ts` accordingly.
+
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
