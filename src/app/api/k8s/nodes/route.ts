@@ -6,6 +6,7 @@ export async function GET() {
   const dummyNodes = [
     {
       name: 'mig-node-1',
+      unschedulable: false,
       cpu: { capacity: '32', allocatable: '31', usage: '0m' },
       memory: { capacity: '128Gi', allocatable: '120Gi', usage: '0Mi' },
       gpus: {
@@ -15,6 +16,7 @@ export async function GET() {
     },
     {
       name: 'mig-node-2',
+      unschedulable: true, // Mark as unschedulable for testing
       cpu: { capacity: '32', allocatable: '31', usage: '0m' },
       memory: { capacity: '128Gi', allocatable: '120Gi', usage: '0Mi' },
       gpus: {
@@ -23,6 +25,7 @@ export async function GET() {
     },
     {
       name: 'non-mig-gpu-node', // New node for non-MIG GPU
+      unschedulable: false,
       cpu: { capacity: '16', allocatable: '15', usage: '0m' },
       memory: { capacity: '64Gi', allocatable: '60Gi', usage: '0Mi' },
       gpus: {
@@ -31,6 +34,7 @@ export async function GET() {
     },
     {
       name: 'no-gpu-node',
+      unschedulable: false,
       cpu: { capacity: '16', allocatable: '15', usage: '0m' },
       memory: { capacity: '64Gi', allocatable: '60Gi', usage: '0Mi' },
       gpus: {},
@@ -66,6 +70,7 @@ export async function GET() {
 
       return {
         name: node.metadata?.name || 'unknown',
+        unschedulable: node.spec?.unschedulable || false,
         cpu: { 
           capacity: capacity['cpu'] || 'N/A', 
           allocatable: allocatable['cpu'] || 'N/A', 

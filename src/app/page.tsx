@@ -13,6 +13,7 @@ interface GpuInfo {
 
 interface NodeData {
   name: string;
+  unschedulable: boolean;
   cpu: { capacity: string; allocatable: string; usage:string };
   memory: { capacity: string; allocatable: string; usage: string };
   gpus: { [migProfile: string]: GpuInfo }; // Now an object for MIG profiles
@@ -29,6 +30,7 @@ interface MetricData {
 // CombinedNodeData will merge NodeData and MetricData
 interface CombinedNodeData {
     name: string;
+    unschedulable: boolean;
     cpu: { capacity: string; allocatable: string; usage: string };
     memory: { capacity: string; allocatable: string; usage: string };
     gpus: { [migProfile: string]: GpuInfo };
@@ -132,13 +134,20 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {nodes.map((node) => {
           const totalGpuCapacity = getTotalGpuCapacity(node);
+          const isCordoned = node.unschedulable;
+          const cardBgClass = isCordoned 
+            ? 'bg-stone-200 dark:bg-stone-800 ring-2 ring-orange-500' 
+            : 'bg-white dark:bg-gray-800';
+
           return (
             <div
               key={node.name}
-              className="p-4 rounded-lg shadow-md bg-white dark:bg-gray-800 flex flex-col items-center justify-center text-center cursor-pointer transform transition-transform duration-200 hover:scale-105"
+              className={`p-4 rounded-lg shadow-md ${cardBgClass} flex flex-col items-center justify-center text-center cursor-pointer transform transition-transform duration-200 hover:scale-105`}
               onClick={() => setSelectedNode(node)}
             >
-              <h2 className="text-xl font-semibold mb-4">{node.name}</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                {node.name} {isCordoned && <span className="block text-sm text-orange-600 dark:text-orange-400 font-bold mt-1">(Cordoned)</span>}
+              </h2>
               <div className="w-full space-y-4">
                 <ResourceGrid label="CPU" percentage={node.cpuUsagePercentage || 0} total={10} />
                 <ResourceGrid label="Memory" percentage={node.memoryUsagePercentage || 0} total={10} />
