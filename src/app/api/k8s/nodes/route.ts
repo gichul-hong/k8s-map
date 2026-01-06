@@ -14,8 +14,8 @@ export async function GET() {
         'nvidia.com/mig-2g.10gb': { capacity: '2', allocatable: '2', usage: '0' },
       },
       pods: [
-        { namespace: 'ai-team', name: 'training-job-v1', gpuCount: 1 },
-        { namespace: 'ai-team', name: 'jupyter-notebook-0', gpuCount: 1 },
+        { namespace: 'aip-training', name: 'training-job-v1', gpuCount: 1 },
+        { namespace: 'aip-research', name: 'jupyter-notebook-0', gpuCount: 1 },
       ]
     },
     {
@@ -27,7 +27,7 @@ export async function GET() {
         'nvidia.com/mig-3g.20gb': { capacity: '2', allocatable: '2', usage: '0' },
       },
       pods: [
-        { namespace: 'data-team', name: 'inference-service-x', gpuCount: 1 },
+        { namespace: 'aip-inference', name: 'inference-service-x', gpuCount: 1 },
       ]
     },
     {
@@ -39,7 +39,10 @@ export async function GET() {
         'nvidia.com/gpu': { capacity: '4', allocatable: '4', usage: '0' }, // 4 non-MIG GPUs
       },
       pods: [
-        { namespace: 'default', name: 'legacy-gpu-app', gpuCount: 2 },
+        { namespace: 'default', name: 'legacy-gpu-app', gpuCount: 2 }, // Should be filtered out in real logic if not starting with aip-, but keeping as outlier example or update to match? Let's update to match for consistency visually, or keep to show logic might filter it?
+        // User asked for "filtering logic", so dummy data should probably look like the result of that filtering.
+        // Let's make this one 'aip-legacy'
+        { namespace: 'aip-legacy', name: 'legacy-gpu-app', gpuCount: 2 },
       ]
     },
     {
@@ -88,15 +91,32 @@ export async function GET() {
       }
 
       // Filter pods for this node and check for GPU usage
-      const nodePods = allPods.filter(pod => pod.spec?.nodeName === nodeName).map(pod => {
-         // Logic to determine GPU usage from container resources would go here
-         // For now simplified
+      const nodePods = allPods.filter(pod => {
+        const ns = pod.metadata?.namespace || '';
+        // Filter 1: Namespace must start with 'aip-'
+        if (!ns.startsWith('aip-')) return false;
+        // Filter 2: Must be on this node
+        if (pod.spec?.nodeName !== nodeName) return false;
+        return true;
+      }).map(pod => {
+         let gpuCount = 0;
+         // Check containers for nvidia.com/ resource limits
+         pod.spec?.containers.forEach(container => {
+           const limits = container.resources?.limits || {};
+           for (const key in limits) {
+             if (key.startsWith('nvidia.com/')) {
+               const val = parseInt(limits[key] || '0', 10);
+               if (!isNaN(val)) gpuCount += val;
+             }
+           }
+         });
+         
          return {
            namespace: pod.metadata?.namespace || '',
            name: pod.metadata?.name || '',
-           gpuCount: 0 // Placeholder logic
+           gpuCount: gpuCount
          };
-      }).filter(p => p.gpuCount > 0);
+      }).filter(p => p.gpuCount > 0); // Filter 3: Must have > 0 GPU usage
 
       return {
         name: nodeName,
