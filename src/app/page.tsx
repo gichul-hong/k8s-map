@@ -11,12 +11,19 @@ interface GpuInfo {
   usagePercentage?: number; // From Prometheus metrics
 }
 
+interface PodInfo {
+  namespace: string;
+  name: string;
+  gpuCount: number;
+}
+
 interface NodeData {
   name: string;
   unschedulable: boolean;
   cpu: { capacity: string; allocatable: string; usage:string };
   memory: { capacity: string; allocatable: string; usage: string };
   gpus: { [migProfile: string]: GpuInfo }; // Now an object for MIG profiles
+  pods?: PodInfo[];
 }
 
 interface MetricData {
@@ -34,6 +41,7 @@ interface CombinedNodeData {
     cpu: { capacity: string; allocatable: string; usage: string };
     memory: { capacity: string; allocatable: string; usage: string };
     gpus: { [migProfile: string]: GpuInfo };
+    pods?: PodInfo[];
     cpuUsagePercentage?: number;
     memoryUsagePercentage?: number;
     gpuUsagePercentage?: number;
@@ -190,6 +198,31 @@ export default function Home() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+              {selectedNode.pods && selectedNode.pods.length > 0 && (
+                <div className="md:col-span-2 mt-4">
+                  <h3 className="text-xl font-semibold mb-2">GPU Pods</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm text-left">
+                        <thead>
+                            <tr className="border-b dark:border-gray-700">
+                                <th className="py-2">Namespace</th>
+                                <th className="py-2">Pod Name</th>
+                                <th className="py-2">GPU Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {selectedNode.pods.map((pod, idx) => (
+                                <tr key={idx} className="border-b dark:border-gray-700 last:border-0">
+                                    <td className="py-2 pr-4">{pod.namespace}</td>
+                                    <td className="py-2 pr-4">{pod.name}</td>
+                                    <td className="py-2">{pod.gpuCount}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

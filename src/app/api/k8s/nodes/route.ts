@@ -13,6 +13,10 @@ export async function GET() {
         'nvidia.com/mig-1g.5gb': { capacity: '4', allocatable: '4', usage: '0' },
         'nvidia.com/mig-2g.10gb': { capacity: '2', allocatable: '2', usage: '0' },
       },
+      pods: [
+        { namespace: 'ai-team', name: 'training-job-v1', gpuCount: 1 },
+        { namespace: 'ai-team', name: 'jupyter-notebook-0', gpuCount: 1 },
+      ]
     },
     {
       name: 'mig-node-2',
@@ -22,6 +26,9 @@ export async function GET() {
       gpus: {
         'nvidia.com/mig-3g.20gb': { capacity: '2', allocatable: '2', usage: '0' },
       },
+      pods: [
+        { namespace: 'data-team', name: 'inference-service-x', gpuCount: 1 },
+      ]
     },
     {
       name: 'non-mig-gpu-node', // New node for non-MIG GPU
@@ -31,6 +38,9 @@ export async function GET() {
       gpus: {
         'nvidia.com/gpu': { capacity: '4', allocatable: '4', usage: '0' }, // 4 non-MIG GPUs
       },
+      pods: [
+        { namespace: 'default', name: 'legacy-gpu-app', gpuCount: 2 },
+      ]
     },
     {
       name: 'no-gpu-node',
@@ -38,6 +48,7 @@ export async function GET() {
       cpu: { capacity: '16', allocatable: '15', usage: '0m' },
       memory: { capacity: '64Gi', allocatable: '60Gi', usage: '0Mi' },
       gpus: {},
+      pods: []
     },
   ];
   return NextResponse.json(dummyNodes);
@@ -51,8 +62,16 @@ export async function GET() {
 
     const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-    const res = await k8sApi.listNode();
-    const nodes = res.body.items.map((node) => {
+    // Fetch nodes and pods in parallel
+    const [nodesRes, podsRes] = await Promise.all([
+      k8sApi.listNode(),
+      k8sApi.listPodForAllNamespaces()
+    ]);
+
+    const allPods = podsRes.body.items;
+
+    const nodes = nodesRes.body.items.map((node) => {
+      const nodeName = node.metadata?.name || 'unknown';
       const capacity = node.status?.capacity || {};
       const allocatable = node.status?.allocatable || {};
       
@@ -68,8 +87,19 @@ export async function GET() {
         }
       }
 
+      // Filter pods for this node and check for GPU usage
+      const nodePods = allPods.filter(pod => pod.spec?.nodeName === nodeName).map(pod => {
+         // Logic to determine GPU usage from container resources would go here
+         // For now simplified
+         return {
+           namespace: pod.metadata?.namespace || '',
+           name: pod.metadata?.name || '',
+           gpuCount: 0 // Placeholder logic
+         };
+      }).filter(p => p.gpuCount > 0);
+
       return {
-        name: node.metadata?.name || 'unknown',
+        name: nodeName,
         unschedulable: node.spec?.unschedulable || false,
         cpu: { 
           capacity: capacity['cpu'] || 'N/A', 
@@ -82,6 +112,7 @@ export async function GET() {
           usage: '0Mi' 
         },
         gpus: gpus,
+        pods: nodePods
       };
     });
 
