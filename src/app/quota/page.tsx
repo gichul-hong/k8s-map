@@ -30,36 +30,21 @@ interface NamespaceQuota {
 }
 
 export default function QuotaPage() {
-  const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [selectedCluster, setSelectedCluster] = useState<string>('');
+  const clusters = [
+    { id: 'aistudio', name: 'aistudio' },
+    { id: 'neptune', name: 'neptune' },
+  ];
+  const [selectedCluster, setSelectedCluster] = useState<string>('aistudio');
   const [quotas, setQuotas] = useState<NamespaceQuota[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchClusters() {
-      try {
-        const res = await fetch('/api/k8s/clusters');
-        if (!res.ok) throw new Error('Failed to fetch clusters');
-        const data: Cluster[] = await res.json();
-        setClusters(data);
-        if (data.length > 0) {
-          setSelectedCluster(data[0].id);
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchClusters();
-  }, []);
 
   useEffect(() => {
     if (!selectedCluster) return;
 
     async function fetchQuotas() {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/k8s/quota?cluster=${selectedCluster}`);
         if (!res.ok) throw new Error('Failed to fetch quota data');
@@ -116,7 +101,6 @@ export default function QuotaPage() {
           className="block w-full max-w-xs p-2.5 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
           value={selectedCluster}
           onChange={(e) => setSelectedCluster(e.target.value)}
-          disabled={loading && clusters.length === 0}
         >
           {clusters.map((c) => (
             <option key={c.id} value={c.id}>
