@@ -127,66 +127,67 @@ export default function QuotaPage() {
       </div>
 
       {loading && quotas.length === 0 ? (
-         <div className="flex justify-center items-center h-64">
-           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-         </div>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
       ) : error ? (
         <div className="p-4 bg-red-100 text-red-900 rounded">{error}</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {quotas.map((q) => (
-            <div key={q.namespace} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-              <h2 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">{q.namespace}</h2>
-              
-              <div className="space-y-4">
-                <ProgressBar 
-                  label="CPU" 
-                  used={q.cpu.used} 
-                  limit={q.cpu.limit} 
-                  unit={q.cpu.unit} 
-                  colorClass="bg-green-500"
-                />
-                <ProgressBar 
-                  label="Memory" 
-                  used={q.memory.used} 
-                  limit={q.memory.limit} 
-                  unit={q.memory.unit} 
-                  colorClass="bg-purple-500"
-                />
-                
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                  <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">GPU (MIG)</h3>
-                  {Object.entries(q.gpu).map(([profile, stats]) => (
-                    <div key={profile} className="mb-2">
-                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-600 dark:text-gray-400 truncate w-2/3" title={profile}>{profile.replace('nvidia.com/', '')}</span>
-                        <span className="text-gray-600 dark:text-gray-400">
-                          {stats.used}/{stats.limit}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
-                        <div 
-                          className="bg-orange-500 h-1.5 rounded-full" 
-                          style={{ width: `${Math.min(100, (stats.used / stats.limit) * 100)}%` }}
-                        ></div>
-                      </div>
+        <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Namespace</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CPU (Used/Limit)</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Memory (Used/Limit)</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">GPU (MIG Profiles)</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Storage (Used/Limit)</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {quotas.map((q) => (
+                <tr key={q.namespace} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {q.namespace}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-gray-100 mb-1">{q.cpu.used} / {q.cpu.limit} {q.cpu.unit}</div>
+                    <div className="w-24 bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                      <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${calculatePercentage(q.cpu.used, q.cpu.limit)}%` }}></div>
                     </div>
-                  ))}
-                  {Object.keys(q.gpu).length === 0 && <p className="text-xs text-gray-500">No GPU quota</p>}
-                </div>
-
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                   <ProgressBar 
-                    label="Storage" 
-                    used={q.storage.used} 
-                    limit={q.storage.limit} 
-                    unit={q.storage.unit} 
-                    colorClass="bg-indigo-500"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-gray-100 mb-1">{q.memory.used} / {q.memory.limit} {q.memory.unit}</div>
+                    <div className="w-24 bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                      <div className="bg-purple-500 h-1.5 rounded-full" style={{ width: `${calculatePercentage(q.memory.used, q.memory.limit)}%` }}></div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col gap-2 min-w-[200px]">
+                      {Object.entries(q.gpu).map(([profile, stats]) => (
+                        <div key={profile} className="flex flex-col">
+                          <div className="flex justify-between text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">
+                            <span className="truncate max-w-[120px]" title={profile}>{profile.replace('nvidia.com/', '')}</span>
+                            <span>{stats.used}/{stats.limit}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1 dark:bg-gray-700">
+                            <div className="bg-orange-500 h-1 rounded-full" style={{ width: `${Math.min(100, (stats.used / stats.limit) * 100)}%` }}></div>
+                          </div>
+                        </div>
+                      ))}
+                      {Object.keys(q.gpu).length === 0 && <span className="text-xs text-gray-400 italic">None</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-gray-100 mb-1">{q.storage.used} / {q.storage.limit} {q.storage.unit}</div>
+                    <div className="w-24 bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                      <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${calculatePercentage(q.storage.used, q.storage.limit)}%` }}></div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
