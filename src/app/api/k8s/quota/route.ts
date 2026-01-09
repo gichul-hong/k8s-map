@@ -87,9 +87,14 @@ export async function GET(request: NextRequest) {
           if (hard['requests.storage']) storageLimit += parseQuantity(hard['requests.storage']);
           if (used['requests.storage']) storageUsed += parseQuantity(used['requests.storage']);
 
-          // GPU & Custom Resources
+          // GPU & Custom Resources - Filtering for specific keys only
+          const targetGpuKeys = ['requests.mig-1g.10gb', 'requests.mig-2g.20gb', 'requests.gpu'];
+          
           Object.keys(hard).forEach(key => {
-            if (key.startsWith('nvidia.com/')) {
+            // Check if the key matches our target list (handling potential nvidia.com/ prefixes)
+            const isTarget = targetGpuKeys.some(target => key === target || key.endsWith('/' + target.replace('requests.', '')));
+            
+            if (isTarget) {
               if (!gpuData[key]) gpuData[key] = { used: 0, limit: 0 };
               gpuData[key].limit += parseQuantity(hard[key]);
               gpuData[key].used += parseQuantity(used[key] || '0');
@@ -168,10 +173,9 @@ export async function GET(request: NextRequest) {
           unit: 'Gi'
         },
         gpu: {
-          // Simulating MIG profiles
-          'nvidia.com/mig-1g.5gb': { used: Math.floor(Math.random() * 2), limit: 2 },
-          'nvidia.com/mig-2g.10gb': { used: Math.floor(Math.random() * 2), limit: 2 },
-          'nvidia.com/mig-3g.20gb': { used: Math.floor(Math.random() * 2), limit: 4 },
+          'requests.mig-1g.10gb': { used: Math.floor(Math.random() * 2), limit: 2 },
+          'requests.mig-2g.20gb': { used: Math.floor(Math.random() * 2), limit: 2 },
+          'requests.gpu': { used: Math.floor(Math.random() * 6), limit: 8 },
         },
         storage: {
           used: `${storageUsed}Gi`,

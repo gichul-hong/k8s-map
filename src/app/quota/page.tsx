@@ -133,7 +133,10 @@ export default function QuotaPage() {
                             <span>{stats.used}/{stats.limit}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-1 dark:bg-gray-700">
-                            <div className="bg-orange-500 h-1 rounded-full" style={{ width: `${Math.min(100, (stats.used / stats.limit) * 100)}%` }}></div>
+                            <div 
+                              className="bg-orange-500 h-1 rounded-full" 
+                              style={{ width: `${stats.limit > 0 ? Math.min(100, (stats.used / stats.limit) * 100) : 0}%` }}
+                            ></div>
                           </div>
                         </div>
                       ))}
