@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-interface Cluster {
-  id: string;
-  name: string;
-}
-
 interface QuotaInfo {
   used: string | number;
   limit: string | number;
@@ -64,23 +59,6 @@ export default function QuotaPage() {
     const l = typeof limit === 'string' ? parseFloat(limit) : limit;
     if (l === 0) return 0;
     return Math.min(100, (u / l) * 100);
-  };
-
-  const ProgressBar = ({ label, used, limit, unit, colorClass = 'bg-blue-600' }: { label: string, used: string | number, limit: string | number, unit?: string, colorClass?: string }) => {
-    const pct = calculatePercentage(used, limit);
-    return (
-      <div className="mb-2">
-        <div className="flex justify-between text-sm mb-1">
-          <span className="font-medium text-gray-700 dark:text-gray-300">{label}</span>
-          <span className="text-gray-600 dark:text-gray-400">
-            {used} / {limit} {unit}
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-          <div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${pct}%` }}></div>
-        </div>
-      </div>
-    );
   };
 
   return (
