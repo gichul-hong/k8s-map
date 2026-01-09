@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import ResourceGrid from '../components/ResourceGrid';
 
 // Define the GPU structure for MIG devices
@@ -135,7 +136,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <h1 className="text-4xl font-bold mb-8 text-center">Kubernetes Node Heatmap</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-center">Kubernetes Node Heatmap</h1>
+        <Link href="/quota" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold">
+          View Quotas
+        </Link>
+      </div>
 
       {/* Resource selection buttons removed for clarity, showing all grids */}
 
