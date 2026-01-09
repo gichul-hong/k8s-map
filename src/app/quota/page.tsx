@@ -33,6 +33,7 @@ export default function QuotaPage() {
   const [quotas, setQuotas] = useState<NamespaceQuota[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!selectedCluster) return;
@@ -61,6 +62,10 @@ export default function QuotaPage() {
     return Math.min(100, (u / l) * 100);
   };
 
+  const filteredQuotas = quotas.filter((q) =>
+    q.namespace.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="flex justify-between items-center mb-8">
@@ -70,22 +75,37 @@ export default function QuotaPage() {
         </Link>
       </div>
 
-      <div className="mb-8">
-        <label htmlFor="cluster-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Select Cluster
-        </label>
-        <select
-          id="cluster-select"
-          className="block w-full max-w-xs p-2.5 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-          value={selectedCluster}
-          onChange={(e) => setSelectedCluster(e.target.value)}
-        >
-          {clusters.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+      <div className="mb-8 flex flex-col md:flex-row gap-4">
+        <div>
+          <label htmlFor="cluster-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Select Cluster
+          </label>
+          <select
+            id="cluster-select"
+            className="block w-full min-w-[200px] p-2.5 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            value={selectedCluster}
+            onChange={(e) => setSelectedCluster(e.target.value)}
+          >
+            {clusters.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+           <label htmlFor="namespace-search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Filter Namespace
+          </label>
+          <input
+            type="text"
+            id="namespace-search"
+            className="block w-full min-w-[200px] p-2.5 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            placeholder="Search namespaces..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {loading && quotas.length === 0 ? (
@@ -107,7 +127,7 @@ export default function QuotaPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {quotas.map((q) => (
+              {filteredQuotas.map((q) => (
                 <tr key={q.namespace} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600 dark:text-blue-400">
                     {q.namespace}
